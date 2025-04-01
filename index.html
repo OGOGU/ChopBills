@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repartiment de Despeses</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        input, button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: white;
+            margin: 5px;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-btn {
+            background-color: red;
+            border: none;
+            color: white;
+            padding: 5px;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background-color: darkred;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const people = [];
+
+            document.getElementById("afegir").addEventListener("click", function () {
+                const nom = document.getElementById("nom").value.trim();
+                const despesa = parseFloat(document.getElementById("despesa").value);
+                if (nom && !isNaN(despesa)) {
+                    people.push({ nom, despesa });
+                    actualitzarLlista();
+                    document.getElementById("nom").value = "";
+                    document.getElementById("despesa").value = "";
+                }
+            });
+
+            document.getElementById("calcular").addEventListener("click", function () {
+                if (people.length === 0) {
+                    document.getElementById("result").innerHTML = "<p>Afegeix almenys una persona amb una despesa.</p>";
+                    return;
+                }
+                
+                const n = people.length;
+                const totalDespesa = people.reduce((acc, fam) => acc + fam.despesa, 0);
+                const despesaM = totalDespesa / n;
+                let saldos = people.map(fam => fam.despesa - despesaM);
+                let reben = saldos.map((saldo, i) => ({ nom: people[i].nom, saldo }))
+                                  .filter(f => f.saldo > 0);
+                let result = `<h2>Despesa total: ${totalDespesa.toFixed(2)} €</h2>`;
+                result += `<h2>Despesa per persona: ${despesaM.toFixed(2)} €</h2>`;
+                result += `<h3>Saldo de cada persona:</h3><ul>`;
+                saldos.forEach((saldo, i) => {
+                    result += `<li>${people[i].nom}: ${saldo.toFixed(2)} €</li>`;
+                });
+                result += `</ul>`;
+                result += `<h3>Distribució de pagaments:</h3><ul>`;
+                people.forEach((fam, i) => {
+                    if (saldos[i] < 0) {
+                        let saldoNegatiu = -saldos[i];
+                        for (let j = 0; j < reben.length; j++) {
+                            if (saldoNegatiu <= 0) break;
+                            let pagament = Math.min(saldoNegatiu, reben[j].saldo);
+                            reben[j].saldo -= pagament;
+                            saldoNegatiu -= pagament;
+                            result += `<li>${fam.nom} paga ${pagament.toFixed(2)} € a ${reben[j].nom}</li>`;
+                        }
+                    }
+                });
+                result += `</ul><h3>Pagaments finalitzats.</h3>`;
+                document.getElementById("result").innerHTML = result;
+            });
+
+            document.getElementById("netejar").addEventListener("click", function () {
+                people.length = 0;
+                document.getElementById("llista-people").innerHTML = "";
+                document.getElementById("result").innerHTML = "";
+            });
+
+            function actualitzarLlista() {
+                const llista = document.getElementById("llista-people");
+                llista.innerHTML = "";
+                people.forEach((fam, index) => {
+                    llista.innerHTML += `<li>${fam.nom}: ${fam.despesa.toFixed(2)} € <button class="delete-btn" onclick="eliminar(${index})">✖</button></li>`;
+                });
+            }
+
+            window.eliminar = function(index) {
+                people.splice(index, 1);
+                actualitzarLlista();
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>Repartiment de Despeses</h1>
+    <label for="nom">Nom:</label>
+    <input type="text" id="nom" placeholder="Nom de la persona">
+    <label for="despesa">Despesa:</label>
+    <input type="number" id="despesa" step="0.01" placeholder="Import">
+    <button id="afegir">Afegir persona</button>
+    <ul id="llista-people"></ul>
+    <button id="calcular">Calcular Repartiment</button>
+    <button id="netejar">Netejar</button>
+    <div id="result"></div>
+</body>
+</html>
